@@ -185,7 +185,7 @@
             (bt2:make-thread
              (lambda ()
                (unwind-protect
-		    (loop for frame = (read-websocket-frame stream)
+		    (loop for frame = (read-websocket-frame stream client)
                           while frame
                           do (parse client frame))
                  (close-connection client)))

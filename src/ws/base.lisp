@@ -4,7 +4,8 @@
   (:import-from :fast-websocket
                 #:make-ws
                 #:ws-stage
-                #:make-parser)
+                #:make-parser
+                #:error-code)
   (:import-from :event-emitter
                 #:emit
                 #:event-emitter)
@@ -210,7 +211,7 @@
         when (and sym (typep condition sym))
         return t))
 
-(defun read-websocket-frame (stream)
+(defun read-websocket-frame (stream ws)
   (let ((buf (make-array 2 :element-type '(unsigned-byte 8)))
         (extended-buf (make-array 8 :element-type '(unsigned-byte 8)))
         (read-seq-count 0))
@@ -244,6 +245,14 @@
                               for i from 0 below end
                               do (setf length (+ (ash length 8) (aref extended-buf i)))
                               finally (return length))))))
+             (let ((max-allowed (min (max-length ws)
+                                     (ash array-dimension-limit -2))))
+               (when (> data-length max-allowed)
+                 (send-close-frame ws
+                                   (format nil "frame payload too large (~D bytes; max ~D)"
+                                           data-length max-allowed)
+                                   (error-code :too-large))
+                 (return nil)))
              (when maskp
                (incf data-length 4))
              (let ((data (make-array (+ read-bytes data-length) :element-type '(unsigned-byte 8))))
