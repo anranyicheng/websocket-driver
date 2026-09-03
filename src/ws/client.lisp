@@ -52,8 +52,10 @@
   (setf (accept client) (generate-accept (key client))))
 
 (defun read-until-crlf*2 (stream &key (max-header-size 65536))
-  (declare (optimize (speed 3)))
+  (declare (optimize (speed 3))
+	   (fixnum max-header-size))
   (let ((total-bytes 0))
+    (declare (fixnum total-bytes))
     (with-fast-output (buf)
       (tagbody
        read-cr
